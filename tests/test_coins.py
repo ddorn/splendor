@@ -67,3 +67,29 @@ def test_coins_iter():
 )
 def test_coins_total(coins, expected):
     assert coins.total() == expected
+
+
+@mark.parametrize(
+    "a,b,c",
+    [
+        (Coins(1), Coins(), Coins(1)),
+        (Coins(yellow=3), Coins(yellow=2), Coins(yellow=5)),
+        (Coins(1, 2), Coins(3, 4), Coins(4, 6)),
+        (Coins(black=1, blue=2), Coins(1, 2, 3, yellow=1), Coins(1, 2, 5, 1, 0, 1)),
+    ],
+)
+def test_coins_sum(a, b, c):
+    assert a + b == c
+
+
+@mark.parametrize(
+    "a,b,c",
+    [
+        (Coins(1), Coins(), Coins(1)),
+        (Coins(yellow=3), Coins(yellow=2), Coins(yellow=1)),
+        (Coins(1, 2), Coins(3, 4), Coins(-2, -2)),
+        (Coins(4, 4, 4, 4, 4, 4), Coins(1, 2, 3, yellow=1), Coins(3, 2, 1, 4, 4, 3)),
+    ],
+)
+def test_coins_sub(a, b, c):
+    assert a - b == c

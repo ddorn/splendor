@@ -14,13 +14,18 @@ PublicState = namedtuple("PublicState", ["cards", "coins", "players"])
 
 class Game:
     def __init__(self, *clients):
+        assert len(clients) in range(2, 5)
+
         self.clients = clients
         self.players = [Player() for _ in clients]
-        self.deck = [[c for c in CARDS if c[STAGE] == age] for age in (1, 2, 3)]
+        self.deck = [[c for c in CARDS if c.stage == stage] for stage in STAGES]
 
-        shuffle(NOBLES)
-        self.nobles = NOBLES[: len(clients) + 1]
-        self.bank = Coins()
+        nobles = list(NOBLES)
+        shuffle(nobles)
+        self.nobles = nobles[: len(clients) + 1]
+
+        sc = START_COINS[len(clients)]
+        self.bank = Coins(sc, sc, sc, sc, sc, 5)
 
     def ended(self):
         """Whether the game is over."""
@@ -44,43 +49,84 @@ class Game:
         This does no check to see whether a it is this player's turn.
         """
 
-        if isinstance(action, TakeAction):
-            if len(action) > 3:
-                raise TakeCoinsException("Cannot take more than 3 coins.", action)
-            if len(action) != len(set(action)) and len(action) != 2:
-                raise TakeCoinsException("Can only take two coins alone.", action)
-            if YELLOW in TakeAction:
-                raise TakeCoinsException("Cannot take yellow coin.", action)
-            if not COINS.issuperset(TakeAction):
-                raise TakeCoinsException("Not all coins are valid numbers.", action)
-
-            wanted = action.as_coins()
-            if not wanted.issubset(self.bank):
-                raise NotEnoughCoins(self.bank, wanted)
-
-            two_same = len(action) == 2 and action[0] == action[1]
-
-            if two_same:
-                color = action[0]
-
-            else:
-                ...
-
-            self._take_action(player, action)
-
-        elif isinstance(action, BuyAction):
-            ...
-
-        elif isinstance(action, ReserveAction):
-            ...
+        {
+            TakeAction: self._take_action,
+            BuyAction: self._buy_action,
+            ReserveAction: self._reserve_action,
+        }[action.__class__](player, action)
 
     def _take_action(self, player, take: TakeAction):
-        """Perform a TakeAction without checking anything."""
+        if len(take) > 3:
+            raise TakeCoinsException("Cannot take more than 3 coins.", take)
+        if len(take) != len(set(take)) and len(take) != 2:
+            raise TakeCoinsException("Can only take two coins alone.", take)
+        if YELLOW in take:
+            raise TakeCoinsException("Cannot take yellow coin.", take)
+        if not COINS.issuperset(take):
+            raise TakeCoinsException("Not all coins are valid numbers.", take)
+
+        wanted = take.as_coins()
+
+        total = wanted.total() + player.coins.total()
+        if total > MAX_COINS_PER_PLAYER:
+            raise TooManyCoins(wanted.total(), total)
+
+        if not wanted.issubset(self.bank):
+            raise NotEnoughCoins(self.bank, wanted)
+
+        two_same = len(take) == 2 and take[0] == take[1]
+
+        if two_same:
+            color = take[0]
+            if self.bank[color] < MIN_COINS_FOR_TAKE_TWO_SAME:
+                raise NotEnoughCoins(self.bank, wanted)
+
+        self.bank -= wanted
+        player.coins += wanted
+
+    def _buy_action(self, player: Player, buy: BuyAction):
+        # Get the card
+        ...
+
+    def _reserve_action(self, player: Player, reserve: ReserveAction):
+
+        if len(player.reserved) > MAX_RESERVED:
+            raise ReserveFull()
+
+        # Get the card
+        card: Card
+        if reserve.card_id in STAGES:
+            stage = STAGES.index(reserve.card_id)
+
+            if len(self.deck[stage]) <= VISIBLE_CARDS:
+                raise EmptyDeck(reserve.card_id)
+
+            card = self.deck[stage][VISIBLE_CARDS]
+        else:
+            candidates = [
+                c
+                for stage in self.deck
+                for c in stage[:VISIBLE_CARDS]
+                if c.id == reserve.card_id
+            ]
+            if not candidates:
+                raise NoSuchCard(reserve.card_id)
+            assert len(candidates) == 1, "There are two cards with the same id ???"
+
+            card = candidates[0]
+            stage = STAGES.index(card.stage)
+
+        self.deck[stage].remove(card)
+        player.reserved.append(card)
+
+        if player.coins.total() < MAX_COINS_PER_PLAYER and self.bank.yellow > 0:
+            player.coins += Coins(yellow=1)
+            self.bank -= Coins(yellow=1)
 
     @property
     def public_state(self):
         return PublicState(
-            [self.deck[age][:4] for age in range(3)],
+            tuple(tuple(self.deck[age][:4]) for age in range(3)),
             self.bank,
-            [p.as_tuple() for p in self.players],
+            tuple(p.as_tuple() for p in self.players),
         )

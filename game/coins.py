@@ -23,3 +23,9 @@ class Coins:
 
     def total(self):
         return sum(self)
+
+    def __add__(self, other):
+        return Coins(*[a + b for a, b in zip(self, other)])
+
+    def __sub__(self, other):
+        return Coins(*[a - b for a, b in zip(self, other)])

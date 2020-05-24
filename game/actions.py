@@ -29,6 +29,7 @@ class TakeAction(tuple):
 
 class BuyAction:
     def __init__(self, card_id):
+        assert card_id in ("I", "II", "III") or card_id in range(len(CARDS))
         self.card_id = card_id
 
     def __repr__(self):

@@ -3,7 +3,7 @@ from collections import namedtuple
 from game.coins import Coins
 
 
-PlayerTuple = namedtuple("PlayerTuple", ["points", "coins", "production"])
+PlayerTuple = namedtuple("PlayerTuple", ["points", "coins", "production", "reserved"])
 
 
 class Player:
@@ -11,6 +11,9 @@ class Player:
         self.points = 0
         self.coins = Coins()
         self.production = Coins()
+        self.reserved = []
 
     def as_tuple(self):
-        return PlayerTuple(self.points, self.coins, self.production)
+        return PlayerTuple(
+            self.points, self.coins, self.production, tuple(self.reserved)
+        )
