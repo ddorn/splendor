@@ -86,3 +86,64 @@ def test_game_take_action2():
 
     with raises(NotEnoughCoins):
         game.action(p1, TakeAction(BLUE))
+
+
+def test_game_reserve_action_hidden():
+    game = Game(None, None)
+    p = game.players[1]
+
+    for i in range(3):
+        card = game.deck[i][VISIBLE_CARDS]
+        game.action(p, ReserveAction(STAGES[i]))
+
+        assert p.coins == Coins(yellow=i + 1)
+        assert game.bank.yellow == 5 - (i + 1)
+        assert card in p.reserved
+        assert len(p.reserved) == i + 1
+
+    with raises(ReserveFull):
+        game.action(p, ReserveAction("I"))
+
+
+def test_game_reserve_action_coins():
+    game = Game(None, None, None)
+    p1, p2, p3 = game.players
+
+    for i in range(3):
+        game.action(p1, TakeAction(RED, GREEN, BLUE))
+    game.action(p1, ReserveAction("I"))
+
+    assert p1.coins == Coins(3, 3, 3, yellow=1)
+
+    game.action(p1, ReserveAction("I"))
+    assert p1.coins.yellow == 1
+    assert game.bank.yellow == 4
+
+    for i in range(3):
+        game.action(p2, ReserveAction("I"))
+    assert p2.coins.yellow == 3
+
+    game.action(p3, ReserveAction("I"))
+    assert game.bank.yellow == 0
+    assert p3.coins.yellow == 1
+
+    game.action(p3, ReserveAction("I"))
+    assert game.bank.yellow == 0
+    assert p3.coins.yellow == 1
+
+
+def test_game_reserve_visible():
+    game = Game(None, None)
+    p = game.players[0]
+
+    to_reserve = game.deck[0][2]
+    game.action(p, ReserveAction(to_reserve.id))
+
+    assert to_reserve not in game.deck[0]
+    assert to_reserve in p.reserved
+
+    with raises(NoSuchCard):
+        game.action(p, ReserveAction(to_reserve.id))
+
+    assert p.coins == Coins(yellow=1)
+    assert game.bank.yellow == 4

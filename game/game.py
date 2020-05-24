@@ -90,7 +90,7 @@ class Game:
 
     def _reserve_action(self, player: Player, reserve: ReserveAction):
 
-        if len(player.reserved) > MAX_RESERVED:
+        if len(player.reserved) >= MAX_RESERVED:
             raise ReserveFull()
 
         # Get the card
@@ -103,17 +103,10 @@ class Game:
 
             card = self.deck[stage][VISIBLE_CARDS]
         else:
-            candidates = [
-                c
-                for stage in self.deck
-                for c in stage[:VISIBLE_CARDS]
-                if c.id == reserve.card_id
-            ]
-            if not candidates:
+            card = self.get_visible_card(reserve.card_id)
+            if not card:
                 raise NoSuchCard(reserve.card_id)
-            assert len(candidates) == 1, "There are two cards with the same id ???"
 
-            card = candidates[0]
             stage = STAGES.index(card.stage)
 
         self.deck[stage].remove(card)
@@ -122,6 +115,15 @@ class Game:
         if player.coins.total() < MAX_COINS_PER_PLAYER and self.bank.yellow > 0:
             player.coins += Coins(yellow=1)
             self.bank -= Coins(yellow=1)
+
+    def get_visible_card(self, card_id):
+        candidates = [
+            c for stage in self.deck for c in stage[:VISIBLE_CARDS] if c.id == card_id
+        ]
+
+        assert len(candidates) <= 1, "There are two cards with the same id ???"
+
+        return candidates[0] if candidates else None
 
     @property
     def public_state(self):
