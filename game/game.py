@@ -23,40 +23,45 @@ PublicState = namedtuple("PublicState", ["cards", "coins", "players"])
 
 
 class Game:
-    def __init__(self, *clients):
-        assert len(clients) in range(2, 5)
+    def __init__(self, nb_players=4):
+        assert nb_players in range(2, 5), nb_players
 
-        self.clients = clients
-        self.players = [Player() for _ in clients]
+        self.player_idx = 0
+        self.players = [Player() for _ in range(nb_players)]
+
         self.deck = [[c for c in CARDS if c.stage == stage] for stage in STAGES]
+        for stage in self.deck:
+            shuffle(stage)
 
         nobles = list(NOBLES)
         shuffle(nobles)
-        self.nobles = nobles[: len(clients) + 1]
+        self.nobles = nobles[: nb_players + 1]
 
-        sc = START_COINS[len(clients)]
+        sc = START_COINS[nb_players]
         self.bank = Coins(sc, sc, sc, sc, sc, 5)
 
     def ended(self):
         """Whether the game is over."""
         return any(p.points >= POINTS_FOR_WIN for p in self.players)
 
-    def run(self):
-        while not self.ended():
-            for player, client in zip(self.players, self.clients):
-                while True:
-                    try:
-                        self.action(player, client.play(self.public_state))
-                    except Exception as e:
-                        print(e, file=sys.stderr)
-                    else:
-                        break
+    def play(self, action):
+        """Perform an action for the current player."""
+
+        if self.player_idx == 0 and self.ended():
+            raise
+
+        player = self.players[self.player_idx]
+        self.action(player, action)
+
+        self.player_idx += 1
+        self.player_idx %= len(self.players)
 
     def action(self, player, action):
         """
         Perform an action as a player.
 
-        This does no check to see whether a it is this player's turn.
+        This does no check to see whether it is this player's turn
+        nor whether the game has ended.
         """
 
         {
@@ -182,7 +187,10 @@ class Game:
     @property
     def public_state(self):
         return PublicState(
-            tuple(tuple(self.deck[age][:4]) for age in range(3)),
+            tuple(tuple(self.deck[age][:VISIBLE_CARDS]) for age in range(3)),
             self.bank,
             tuple(p.as_tuple() for p in self.players),
         )
+
+    def revealed_cards(self):
+        return [self.deck[age][:VISIBLE_CARDS] for age in range(3)]

@@ -135,7 +135,7 @@ CARDS = (
     Card(3, 5, 3, 0, 3, "III", BLACK, 3, 89),
 )
 
-STAGES = ("I", "III", "III")
+STAGES = ("I", "II", "III")
 
 
 NOBLES = (
