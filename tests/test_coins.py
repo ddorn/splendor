@@ -42,6 +42,21 @@ def test_coins_issubset(a: Coins, b: Coins, expected):
     assert b.issubset(a) != expected
 
 
+@mark.parametrize(
+    "a,b,expected",
+    [
+        (Coins(1), Coins(yellow=1), True),
+        (Coins(2), Coins(1, yellow=1), True),
+        (Coins(blue=3), Coins(blue=1, yellow=1), False),
+        (Coins(1, 2, 3), Coins(0, 2, 1, yellow=3), True),
+        (Coins(1, 2, 3), Coins(0, 2, 1, yellow=8), True),
+        (Coins(2, 2, 2), Coins(2, 0, 2, yellow=1), False),
+    ],
+)
+def test_coins_issubset_yellow(a, b, expected):
+    assert a.issubset(b, True) == expected
+
+
 def test_coins_issubset_empty():
     empty = Coins()
     assert empty.issubset(empty)

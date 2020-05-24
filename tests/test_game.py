@@ -4,6 +4,7 @@ from pytest import raises
 
 from data import *
 from game import *
+from game.coins import yellow_coin
 from game.errors import *
 
 
@@ -147,3 +148,39 @@ def test_game_reserve_visible():
 
     assert p.coins == Coins(yellow=1)
     assert game.bank.yellow == 4
+
+
+def test_game_check_noble():
+    game = Game(None, None)
+    p = game.players[0]
+
+    p.production = Coins(*game.nobles[0])
+
+    assert game.check_nobles(p)
+    p.production -= Coins(1, 1, 1, 1)
+    assert not game.check_nobles(p)
+
+
+def test_game_buy_action():
+    game = Game(None, None)
+    p = game.players[0]
+
+    with raises(NoSuchCard):
+        game.action(p, ReserveAction(game.deck[2][VISIBLE_CARDS].id))
+
+    game.action(p, ReserveAction("I"))
+    card: Card = p.reserved[0]
+    print(p)
+
+    p.coins = Coins(*card[:YELLOW]) - Coins(1, 1, 1, 1, 1)
+    with raises(NotEnoughCoins):
+        game.action(p, BuyAction(card.id))
+
+    p.coins += Coins(1, 1, 1, 1, 1)
+    game.action(p, BuyAction(card.id))
+
+    assert p.points == card.points
+    assert card not in p.reserved
+    assert p.production != Coins()
+
+    # TODO: a bit more testing here

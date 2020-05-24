@@ -1,12 +1,22 @@
 import sys
-from collections import namedtuple
+from operator import attrgetter
 from random import shuffle
 
 from data import *
 from game import TakeAction, BuyAction, ReserveAction
-from game.coins import Coins
+from game.coins import Coins, one_coins
 from game.player import Player
 from game.errors import *
+
+
+def get(objs, **attrs):
+    getter = attrgetter(*attrs)
+    # getter dosen't return a tuple when only one attr is passed.
+    value = tuple(attrs.values()) if len(attrs) > 1 else attrs.popitem()[1]
+
+    for obj in objs:
+        if getter(obj) == value:
+            return obj
 
 
 PublicState = namedtuple("PublicState", ["cards", "coins", "players"])
@@ -86,7 +96,46 @@ class Game:
 
     def _buy_action(self, player: Player, buy: BuyAction):
         # Get the card
-        ...
+        reserved = get(player.reserved, id=buy.card_id)
+        print(reserved)
+        from pprint import pprint
+
+        pprint(player.reserved)
+
+        if reserved:
+            card = reserved
+        else:
+            card = self.get_visible_card(buy.card_id)
+
+        if not card:
+            raise NoSuchCard(buy.card_id)
+
+        # check if we can buy it
+        cost = Coins(*card[:YELLOW], 0)
+        if not cost.issubset(player.coins + player.production):
+            raise NotEnoughCoins(player.coins + player.production, cost)
+
+        # pay
+        coin_cost = (cost - player.production).clamp()
+        missing = (coin_cost - player.coins).clamp()
+        coin_cost = coin_cost - missing + Coins(yellow=missing.total())
+        self.bank += coin_cost
+        player.coins -= coin_cost
+
+        # construct it
+        player.points += card.points
+        player.production += one_coins[card.production]
+
+        if reserved:
+            player.reserved.remove(card)
+        else:
+            self.deck[STAGES.find(card.stage)].remove(card)
+
+        # check nobles
+        noble = self.check_nobles(player)
+        if noble:
+            self.nobles.remove(noble)
+            player.points += POINTS_PER_NOBLE
 
     def _reserve_action(self, player: Player, reserve: ReserveAction):
 
@@ -124,6 +173,11 @@ class Game:
         assert len(candidates) <= 1, "There are two cards with the same id ???"
 
         return candidates[0] if candidates else None
+
+    def check_nobles(self, player):
+        for noble in self.nobles:
+            if Coins(*noble).issubset(player.production):
+                return noble
 
     @property
     def public_state(self):

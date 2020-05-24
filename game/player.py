@@ -17,3 +17,6 @@ class Player:
         return PlayerTuple(
             self.points, self.coins, self.production, tuple(self.reserved)
         )
+
+    def __repr__(self):
+        return f"<Player(points={self.points}, coins={self.coins}, production={self.production}, reserved={self.reserved})>"

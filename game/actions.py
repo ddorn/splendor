@@ -19,9 +19,7 @@ class TakeAction(tuple):
         return tuple.__new__(cls, coins)
 
     def as_coins(self):
-        return Coins(
-            **{COINS_TO_NAMES[color]: nb for color, nb in Counter(self).items()}
-        )
+        return Coins.from_iter(self)
 
     def __repr__(self):
         return f"TAKE {' '.join(map(str, self))}"
