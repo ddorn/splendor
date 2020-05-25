@@ -183,4 +183,14 @@ def test_game_buy_action():
     assert card not in p.reserved
     assert p.production != Coins()
 
-    # TODO: a bit more testing here
+
+def test_game_buy_visible():
+    game = Game(2)
+    p = game.players[0]
+    card = game.deck[0][0]
+
+    p.coins = Coins(*card[:YELLOW])
+    game.action(p, BuyAction(card.id))
+
+    assert p.points == card.points
+    assert p.production != Coins()

@@ -13,6 +13,9 @@ class SplendorException(Exception):
     def __repr__(self):
         return f"{self.__class__.__name__}: {self.msg} | {self.args} || {self.kwargs}"
 
+    def __str__(self):
+        return repr(self)
+
 
 class TakeCoinsException(SplendorException):
     action: "TakeAction"

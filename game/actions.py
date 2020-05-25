@@ -23,7 +23,7 @@ class Action:
 
         if cls is None:
             raise ActionParseError(
-                f"The first ({words[0]}) is not TAKE, BUY nor RESERVE."
+                f"The first word ({words[0]}) is not TAKE, BUY nor RESERVE."
             )
 
         if cls is TakeAction:

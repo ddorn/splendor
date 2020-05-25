@@ -102,10 +102,6 @@ class Game:
     def _buy_action(self, player: Player, buy: BuyAction):
         # Get the card
         reserved = get(player.reserved, id=buy.card_id)
-        print(reserved)
-        from pprint import pprint
-
-        pprint(player.reserved)
 
         if reserved:
             card = reserved
@@ -134,7 +130,7 @@ class Game:
         if reserved:
             player.reserved.remove(card)
         else:
-            self.deck[STAGES.find(card.stage)].remove(card)
+            self.deck[STAGES.index(card.stage)].remove(card)
 
         # check nobles
         noble = self.check_nobles(player)
