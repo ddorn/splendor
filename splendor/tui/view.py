@@ -11,7 +11,9 @@ class TuiView(BaseViewClient):
         print(f" Player: {game.player_idx} ".center(32, "="))
         print()
 
-        print(fmt("Bank:", ul=True), self.coins_str(game.bank))
+        print("Nobles", ul=True)
+        for noble in game.nobles:
+            print(self.noble_str(noble), indent=2)
         print()
 
         for i, age in enumerate(game.revealed_cards()):
@@ -25,6 +27,9 @@ class TuiView(BaseViewClient):
             print("Player", fmt(i, bold=1), ul=True)
             print(self.player_str(player), indent=2)
             print()
+
+        print(fmt("Bank:", ul=True), self.coins_str(game.bank))
+        print()
 
     def show_error(self, error: SplendorException):
         print(error.msg, fg=0xFF0000)
@@ -67,3 +72,7 @@ Reserved  : {res}
 """.strip()
 
         return s
+
+    @classmethod
+    def noble_str(cls, noble: Coins):
+        return f"{cls.coins_str(noble)} → {POINTS_PER_NOBLE}"
