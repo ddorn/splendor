@@ -19,7 +19,9 @@ def get(objs, **attrs):
             return obj
 
 
-PublicState = namedtuple("PublicState", ["current_player", "cards", "coins", "players"])
+PublicState = namedtuple(
+    "PublicState", ["current_player", "cards", "bank", "players", "nobles"]
+)
 
 
 class Game:
@@ -183,12 +185,13 @@ class Game:
                 return noble
 
     @property
-    def public_state(self):
+    def public_state(self) -> PublicState:
         return PublicState(
             self.player_idx,
             tuple(tuple(self.deck[age][:VISIBLE_CARDS]) for age in range(3)),
             self.bank,
             tuple(p.as_tuple() for p in self.players),
+            tuple(self.nobles),
         )
 
     def revealed_cards(self):

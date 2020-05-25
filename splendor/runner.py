@@ -1,3 +1,4 @@
+import sys
 from itertools import cycle
 
 from game import Game, PublicState, TakeAction
@@ -20,6 +21,9 @@ class BaseClient:
     def play(self, state: PublicState):
         return TakeAction()
 
+    def error(self, error: SplendorException):
+        pass
+
 
 class Runner:
     def __init__(self, *clients, view_client=None):
@@ -36,6 +40,7 @@ class Runner:
                 try:
                     self.game.play(client.play(self.game.public_state))
                 except SplendorException as e:
+                    client.error(e)
                     self.view_client.show_error(e)
                 else:
                     break
@@ -47,6 +52,6 @@ class Runner:
 
 
 if __name__ == "__main__":
-    from splendor.tui import TuiClient, TuiView
+    from splendor.tui import TuiClient
 
-    Runner(TuiClient(), BaseClient(), view_client=TuiView()).run()
+    Runner(TuiClient("Félix"), TuiClient("Diego")).run()

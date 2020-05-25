@@ -1,2 +1,2 @@
-from .client import TuiClient
 from .view import TuiView
+from .client import TuiClient

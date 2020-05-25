@@ -50,8 +50,16 @@ def test_game_public_state_immutable():
 def test_game_public_state():
     game = Game(2)
 
-    for age in game.public_state.cards:
+    ps = game.public_state
+
+    assert len(ps.cards) == 3
+    for age in ps.cards:
         assert len(age) == 4
+
+    assert len(ps.nobles) == 3
+    assert ps.bank == game.bank
+    assert ps.current_player == game.player_idx
+    assert len(ps.players) == len(game.players)
 
 
 def test_game_take_action():

@@ -1,22 +1,20 @@
-import re
+from typing import Type
 
-from prompt_toolkit import prompt
+from prompt_toolkit import ANSI
 from prompt_toolkit.completion import Completer, Completion, NestedCompleter
-from prompt_toolkit.contrib.regular_languages import compile
-from prompt_toolkit.contrib.regular_languages.lexer import GrammarLexer
-from prompt_toolkit.lexers import PygmentsLexer
+from prompt_toolkit.lexers import Lexer
 from prompt_toolkit.output import ColorDepth
+from prompt_toolkit.shortcuts import prompt
+from prompt_toolkit.styles import Style
+from prompt_toolkit.styles.named_colors import NAMED_COLORS
 from prompt_toolkit.validation import ValidationError, Validator
 
 from data import *
 from game import *
-from game.errors import ActionParseError
+from game.errors import ActionParseError, SplendorException
 from splendor.runner import BaseClient
-
-
-from prompt_toolkit.lexers import Lexer
-from prompt_toolkit.shortcuts import prompt
-from prompt_toolkit.styles.named_colors import NAMED_COLORS
+from splendor.tui import TuiView
+from splendor.tui.utils import fmt, COINS_LETTER, print
 
 
 class ActionLexer(Lexer):
@@ -98,12 +96,36 @@ class ActionValidator(Validator):
 
 
 class TuiClient(BaseClient):
-    name = "Basic"
+    def __init__(self, name="Basic"):
+        self.name = name
+        self.last_was_error = False
 
     def play(self, public_state: PublicState):
+
+        if not self.last_was_error:
+            self.show(public_state)
+
         completer = NestedCompleter.from_nested_dict(
-            {"TAKE": ColorCompleter(public_state.coins), "BUY": None, "RESERVE": None,}
+            {"TAKE": ColorCompleter(public_state.bank), "BUY": None, "RESERVE": None,}
         )
+
+        def bottom_bar():
+            sep = ("", " ")
+            p = public_state.players[public_state.current_player]
+            return [
+                sep,
+                ("#ffa500 bg:black", " Splendor "),
+                sep,
+                ("", self.name),
+                ("", " > (total) "),
+                *ANSI(
+                    self.coins_str(p.coins + p.production)
+                    .replace("38", "48")
+                    .replace("32;32;32", "80;80;80")
+                ).__pt_formatted_text__(),
+            ]
+
+        style = Style.from_dict({"bottom-toolbar": "#111 bg:#bbb"})
 
         text = prompt(
             f"Player {public_state.current_player}: ",
@@ -111,7 +133,83 @@ class TuiClient(BaseClient):
             validator=ActionValidator(),
             color_depth=ColorDepth.TRUE_COLOR,
             lexer=ActionLexer(),
+            bottom_toolbar=bottom_bar,
+            style=style,
         )
 
         action = Action.from_str(text)
+
+        self.last_was_error = False
         return action
+
+    def show(self, game: PublicState):
+        print("\033[2J", end="")  # clear screen
+        print(f" Player: {self.name} ".center(32, "="))
+        print()
+
+        print("Nobles", ul=True)
+        for noble in game.nobles:
+            print(self.noble_str(noble), indent=2)
+        print()
+
+        for i, age in enumerate(game.cards):
+            print("Age", fmt(STAGES[i], bold=True), ul=True)
+
+            for card in age:
+                print(self.card_str(card), indent=2)
+            print()
+
+        for i, player in enumerate(game.players):
+            print("Player", fmt(i, bold=1), ul=True)
+            print(self.player_str(player), indent=2)
+            print()
+
+        print(fmt("Bank:", ul=True), self.coins_str(game.bank))
+        print()
+
+    def error(self, error: SplendorException):
+        self.last_was_error = True
+        print(error.msg, fg=0xFF0000)
+
+    @classmethod
+    def card_str(cls, card: Card):
+        i = fmt(card.id, it=True)
+        c = cls.coins_str(Coins(*card[:YELLOW]))
+        p = fmt(COINS_LETTER[card.production], fg=card.production)
+        points = fmt(card.points, fg=0xFFA500)
+
+        if card.points:
+            return f"{i}: {c} → {p} + {points}"
+        else:
+            return f"{i}: {c} → {p}"
+
+    @classmethod
+    def coins_str(cls, coins):
+        s = " ".join(
+            fmt(f"{v}{COINS_LETTER[i]}", fg=i if v else 0x202020)
+            for i, v in enumerate(coins)
+        )
+        return s
+
+    @classmethod
+    def player_str(cls, player):
+        p = cls.coins_str(player.production)
+        c = cls.coins_str(player.coins)
+        if player.reserved:
+            res = "\n".join(cls.card_str(c) for c in player.reserved)
+            res = "\n" + fmt(res, indent="↳ ")
+        else:
+            res = "Nothing"
+        pts = fmt(player.points, fg=0xFFA500)
+        s = f"""
+Production: {p}
+Coins     : {c}
+Points    : {pts}
+Reserved  : {res}
+""".strip()
+
+        return s
+
+    @classmethod
+    def noble_str(cls, noble: Coins):
+        return f"{cls.coins_str(noble)} → {POINTS_PER_NOBLE}"
