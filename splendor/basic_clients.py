@@ -7,10 +7,11 @@ from random import choice
 from prompt_toolkit.output import ColorDepth
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import Completer, Completion, NestedCompleter
+from prompt_toolkit.validation import Validator, ValidationError
 
 from game import *
 from data import *
-
+from game.errors import ActionParseError
 
 _print = print
 
@@ -97,8 +98,9 @@ class BasicViewClient:
             print(self.player_str(player), indent=2)
             print()
 
-    def card_str(self, card: Card):
-        c = self.coins_str(Coins(*card[:YELLOW]))
+    @classmethod
+    def card_str(cls, card: Card):
+        c = cls.coins_str(Coins(*card[:YELLOW]))
         p = fmt(COINS_LETTER[card.production], fg=card.production)
         points = fmt(card.points, fg=0xFFA500)
 
@@ -107,18 +109,20 @@ class BasicViewClient:
         else:
             return f"{c} → {p}"
 
-    def coins_str(self, coins):
+    @classmethod
+    def coins_str(cls, coins):
         s = " ".join(
             fmt(f"{v}{COINS_LETTER[i]}", fg=i if v else 0x202020)
             for i, v in enumerate(coins)
         )
         return s
 
-    def player_str(self, player):
-        p = self.coins_str(player.production)
-        c = self.coins_str(player.coins)
+    @classmethod
+    def player_str(cls, player):
+        p = cls.coins_str(player.production)
+        c = cls.coins_str(player.coins)
         if player.reserved:
-            res = "\n".join(self.card_str(c) for c in player.reserved)
+            res = "\n".join(cls.card_str(c) for c in player.reserved)
             res = "\n" + fmt(res, indent="↳ ")
         else:
             res = ""
@@ -150,6 +154,16 @@ class ColorCompleter(Completer):
                 )
 
 
+class ActionValidator(Validator):
+    def validate(self, document):
+        text = document.text
+
+        try:
+            Action.from_str(text)
+        except ActionParseError as e:
+            raise ValidationError(message=e.msg)
+
+
 class BasicClient:
     name = "Basic"
 
@@ -161,11 +175,9 @@ class BasicClient:
         text = prompt(
             f"Player {public_state.current_player}: ",
             completer=completer,
+            validator=ActionValidator(),
             color_depth=ColorDepth.TRUE_COLOR,
         )
-        print("You said: %s" % text)
 
-        if random.random() < 0.7:
-            return TakeAction(choice(list(range(YELLOW))))
-        else:
-            return ReserveAction("I")
+        action = Action.from_str(text)
+        return action
