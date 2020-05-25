@@ -6,6 +6,7 @@ authors = ["ddorn <diego.dorn@free.fr>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
+prompt-toolkit = "^3.0.5"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

@@ -62,3 +62,7 @@ class NoSuchCard(SplendorException):
 class ReserveFull(SplendorException):
     def __init__(self):
         super().__init__(f"There are already {MAX_RESERVED} cards reserved.")
+
+
+class ActionParseError(SplendorException):
+    pass

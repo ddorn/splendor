@@ -9,7 +9,7 @@ from game.errors import *
 
 
 def test_game_init():
-    game = Game(None, None)
+    game = Game(2)
 
     assert len(game.nobles) == 3
 
@@ -19,7 +19,7 @@ def test_game_init():
 
 
 def test_game_public_state_immutable():
-    game = Game(None, None)
+    game = Game(2)
     state = game.public_state
 
     with raises(AttributeError):
@@ -48,14 +48,14 @@ def test_game_public_state_immutable():
 
 
 def test_game_public_state():
-    game = Game(None, None)
+    game = Game(2)
 
     for age in game.public_state.cards:
         assert len(age) == 4
 
 
 def test_game_take_action():
-    game = Game(None, None)
+    game = Game(2)
 
     player = game.players[0]
 
@@ -77,7 +77,7 @@ def test_game_take_action():
 
 
 def test_game_take_action2():
-    game = Game(None, None)
+    game = Game(2)
     p1, p2 = game.players
 
     for i in range(2):
@@ -90,7 +90,7 @@ def test_game_take_action2():
 
 
 def test_game_reserve_action_hidden():
-    game = Game(None, None)
+    game = Game(2)
     p = game.players[1]
 
     for i in range(3):
@@ -107,7 +107,7 @@ def test_game_reserve_action_hidden():
 
 
 def test_game_reserve_action_coins():
-    game = Game(None, None, None)
+    game = Game(3)
     p1, p2, p3 = game.players
 
     for i in range(3):
@@ -134,7 +134,7 @@ def test_game_reserve_action_coins():
 
 
 def test_game_reserve_visible():
-    game = Game(None, None)
+    game = Game(2)
     p = game.players[0]
 
     to_reserve = game.deck[0][2]
@@ -151,7 +151,7 @@ def test_game_reserve_visible():
 
 
 def test_game_check_noble():
-    game = Game(None, None)
+    game = Game(2)
     p = game.players[0]
 
     p.production = Coins(*game.nobles[0])
@@ -162,7 +162,7 @@ def test_game_check_noble():
 
 
 def test_game_buy_action():
-    game = Game(None, None)
+    game = Game(2)
     p = game.players[0]
 
     with raises(NoSuchCard):

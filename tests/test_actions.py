@@ -3,6 +3,7 @@ import pytest
 from data import *
 from game import Coins
 from game.actions import *
+from game.actions import Action
 
 
 def test_action_repr():
@@ -31,3 +32,20 @@ def test_action_repr():
 )
 def test_take_action_as_coins(action: TakeAction, coins: Coins):
     assert action.as_coins() == coins
+
+
+@pytest.mark.parametrize(
+    "s,action",
+    [
+        ("TAKE RED grEen BLUE", TakeAction(RED, GREEN, BLUE)),
+        ("TAKE blue BLUE", TakeAction(BLUE, BLUE)),
+        ("TAKE ", TakeAction()),
+        ("BUY 10", BuyAction(10)),
+        ("BUY 32", BuyAction(32)),
+        ("RESERVE III", ReserveAction("III")),
+        ("RESERVE 12", ReserveAction(12)),
+    ],
+)
+def test_action_parse(s, action):
+    assert Action.from_str(s) == action
+    assert Action.from_str(str(action)) == action
