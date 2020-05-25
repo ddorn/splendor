@@ -18,7 +18,7 @@ poetry add git+https://gitlab.com/ddorn/splendor.git
 
 ### Usage
 
-Any AI should be a subclass of `BasicClient` and a game can be run with a script like this one:
+Any AI should be a subclass of `BaseClient` and a game can be run with a script like this one:
 
 ```python
 import random
