@@ -42,13 +42,15 @@ class Game:
 
     def ended(self):
         """Whether the game is over."""
-        return any(p.points >= POINTS_FOR_WIN for p in self.players)
+        return self.player_idx == 0 and any(
+            p.points >= POINTS_FOR_WIN for p in self.players
+        )
 
     def play(self, action):
         """Perform an action for the current player."""
 
-        if self.player_idx == 0 and self.ended():
-            raise
+        if self.ended():
+            raise GameEnded()
 
         player = self.players[self.player_idx]
         self.action(player, action)

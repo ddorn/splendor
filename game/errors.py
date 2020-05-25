@@ -69,3 +69,8 @@ class ReserveFull(SplendorException):
 
 class ActionParseError(SplendorException):
     pass
+
+
+class GameEnded(SplendorException):
+    def __init__(self):
+        super().__init__("The game is has ended.")

@@ -32,12 +32,18 @@ class Runner:
             self.view_client.show(self.game)
 
             while True:
+                # Resilient to bad actions
                 try:
                     self.game.play(client.play(self.game.public_state))
                 except SplendorException as e:
                     self.view_client.show_error(e)
                 else:
                     break
+
+            if self.game.ended():
+                break
+
+        self.view_client.show(self.game)
 
 
 if __name__ == "__main__":

@@ -194,3 +194,12 @@ def test_game_buy_visible():
 
     assert p.points == card.points
     assert p.production != Coins()
+
+
+def test_game_end_exception():
+    g = Game(2)
+    g.players[0].points += 100
+
+    assert g.ended()
+    with raises(GameEnded):
+        g.play(TakeAction())
