@@ -1,7 +1,7 @@
 import textwrap
 from functools import partial
 
-from data import *
+from splendor.data import *
 
 __all__ = ["print", "fmt", "COINS_LETTER"]
 

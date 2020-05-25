@@ -1,12 +1,11 @@
-import sys
 from operator import attrgetter
 from random import shuffle
 
-from data import *
-from game import TakeAction, BuyAction, ReserveAction
-from game.coins import Coins, one_coins
-from game.player import Player
-from game.errors import *
+from splendor.data import *
+from splendor.game import TakeAction, BuyAction, ReserveAction
+from splendor.game.coins import Coins, one_coins
+from splendor.game.player import Player
+from splendor.game.errors import *
 
 
 def get(objs, **attrs):

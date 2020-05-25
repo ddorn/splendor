@@ -1,7 +1,7 @@
 from collections import Counter
 from dataclasses import dataclass
 
-from data import COINS_TO_NAMES, YELLOW
+from splendor.data import COINS_TO_NAMES, YELLOW
 
 
 @dataclass(frozen=True)

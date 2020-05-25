@@ -1,9 +1,7 @@
 import pytest
 
-from data import *
-from game import Coins
-from game.actions import *
-from game.actions import Action
+from splendor import *
+from splendor.data import *
 
 
 def test_action_repr():

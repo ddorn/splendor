@@ -1,11 +1,8 @@
-from dataclasses import FrozenInstanceError
-
 from pytest import raises
 
-from data import *
-from game import *
-from game.coins import yellow_coin
-from game.errors import *
+from splendor.data import *
+from splendor.game import *
+from splendor.game.errors import *
 
 
 def test_game_init():

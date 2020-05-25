@@ -1,5 +1,3 @@
-from typing import Type
-
 from prompt_toolkit import ANSI
 from prompt_toolkit.completion import Completer, Completion, NestedCompleter
 from prompt_toolkit.lexers import Lexer
@@ -9,12 +7,11 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.styles.named_colors import NAMED_COLORS
 from prompt_toolkit.validation import ValidationError, Validator
 
-from data import *
-from game import *
-from game.errors import ActionParseError, SplendorException
-from splendor.runner import BaseClient
-from splendor.tui import TuiView
-from splendor.tui.utils import fmt, COINS_LETTER, print
+from splendor.data import *
+from splendor.game import *
+from splendor.game.errors import ActionParseError, SplendorException
+from splendor.interfaces.runner import BaseClient
+from .utils import COINS_LETTER, fmt, print
 
 
 class ActionLexer(Lexer):

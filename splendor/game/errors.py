@@ -1,4 +1,4 @@
-from data import MAX_COINS_PER_PLAYER, MAX_RESERVED
+from splendor.data import MAX_COINS_PER_PLAYER, MAX_RESERVED
 
 
 class SplendorException(Exception):

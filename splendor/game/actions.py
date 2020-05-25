@@ -1,6 +1,4 @@
-from collections import Counter
-
-from data import *
+from splendor.data import *
 from .coins import Coins
 
 

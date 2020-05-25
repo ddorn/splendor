@@ -1,4 +1,4 @@
-from data import *
+from splendor.data import *
 from splendor import __version__
 
 

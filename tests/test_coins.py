@@ -1,6 +1,6 @@
 from pytest import raises, mark
 
-from game.coins import Coins
+from splendor.game.coins import Coins
 
 
 def test_coins_immutable():

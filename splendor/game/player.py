@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from game.coins import Coins
+from splendor.game.coins import Coins
 
 
 PlayerTuple = namedtuple("PlayerTuple", ["points", "coins", "production", "reserved"])

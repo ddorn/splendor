@@ -1,8 +1,10 @@
-import sys
 from itertools import cycle
 
-from game import Game, PublicState, TakeAction
-from game.errors import SplendorException
+from splendor.game import Game, PublicState, TakeAction
+from splendor.game.errors import SplendorException
+
+
+__all__ = ["BaseViewClient", "BaseClient", "Runner"]
 
 
 class BaseViewClient:
@@ -52,6 +54,6 @@ class Runner:
 
 
 if __name__ == "__main__":
-    from splendor.tui import TuiClient
+    from splendor.interfaces.tui import TuiClient
 
     Runner(TuiClient("Félix"), TuiClient("Diego")).run()
