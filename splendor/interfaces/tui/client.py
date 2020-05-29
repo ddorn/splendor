@@ -1,28 +1,23 @@
+import itertools
+from itertools import chain
+
 from prompt_toolkit import ANSI
 from prompt_toolkit.completion import Completer, Completion, NestedCompleter
 from prompt_toolkit.lexers import Lexer
 from prompt_toolkit.output import ColorDepth
 from prompt_toolkit.shortcuts import prompt
 from prompt_toolkit.styles import Style
-from prompt_toolkit.styles.named_colors import NAMED_COLORS
 from prompt_toolkit.validation import ValidationError, Validator
 
 from splendor.data import *
 from splendor.game import *
 from splendor.game.errors import ActionParseError, SplendorException
 from splendor.interfaces.runner import BaseClient
-from .utils import COINS_LETTER, fmt, print
+from .utils import COINS_LETTER, fmt, print, COINS_TO_COLOR, BG_COLOR
 
 
 class ActionLexer(Lexer):
     def lex_document(self, document):
-        colors = list(sorted(NAMED_COLORS, key=NAMED_COLORS.get))
-
-        # Colors can be named
-        rev = {color: i for i, color in COINS_TO_NAMES.items()}
-        # Or digits
-        rev.update({str(i): i for i in range(YELLOW + 1)})
-
         def split_words(s: str):
             cur = ""
             for l in s:
@@ -42,18 +37,16 @@ class ActionLexer(Lexer):
 
             words = list(split_words(text))
 
+            if words:
+                lex.append(("fg:white", words[0]))
+            else:
+                lex.append(("", ""))
+
             for w in words[1:]:
                 if w.upper() in ["TAKE", "BUY", "RESERVE"]:
                     lex.append(("#ffffff", w))
-                elif w.lower() in rev:
-                    color = {
-                        RED: "#FF0000",
-                        GREEN: "#00FF00",
-                        BLUE: "#0000FF",
-                        BLACK: "#C06060",
-                        WHITE: "#FFFFFF",
-                        YELLOW: "#FFFF00",
-                    }.get(rev[w.lower()])
+                elif w.lower() in NAME_TO_COINS:
+                    color = COINS_TO_COLOR.get(NAME_TO_COINS[w.lower()])
                     lex.append((color, w))
                 elif w.isnumeric():
                     lex.append(("fg:pink", w))
@@ -72,13 +65,13 @@ class ColorCompleter(Completer):
     def get_completions(self, document, complete_event):
         word = document.get_word_before_cursor().lower()
 
-        for coin, color in COINS_TO_NAMES.items():
+        for coin, color in chain(COINS_TO_NAMES.items(), COINS_TO_JEWELL.items()):
             if self.coins[coin] and color.startswith(word):
                 yield Completion(
                     color.upper(),
                     start_position=-len(word),
-                    style="fg:" + color,
-                    selected_style="fg:white bg:" + color,
+                    style=f"bg:{BG_COLOR} fg:{COINS_TO_COLOR[coin]}",
+                    selected_style="fg:white bg:" + COINS_TO_COLOR[coin],
                 )
 
 
@@ -122,7 +115,12 @@ class TuiClient(BaseClient):
                 ).__pt_formatted_text__(),
             ]
 
-        style = Style.from_dict({"bottom-toolbar": "#111 bg:#bbb"})
+        style = Style.from_dict(
+            {
+                "bottom-toolbar": f"fg:{BG_COLOR} bg:#bbb",
+                "completion-menu.completion": f"fg:#bbb bg:{BG_COLOR}",
+            }
+        )
 
         text = prompt(
             f"Player {public_state.current_player}: ",

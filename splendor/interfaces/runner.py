@@ -44,6 +44,9 @@ class Runner:
                 except SplendorException as e:
                     client.error(e)
                     self.view_client.show_error(e)
+                except KeyboardInterrupt:
+                    print("\033[31mAborted.\033[m")
+                    quit(1)
                 else:
                     break
 

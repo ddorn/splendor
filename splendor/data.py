@@ -17,6 +17,21 @@ COINS_TO_NAMES = {
     YELLOW: "yellow",
 }
 
+COINS_TO_JEWELL = {
+    RED: "ruby",
+    GREEN: "emerald",
+    BLUE: "sapphire",
+    BLACK: "onyx",
+    WHITE: "diamond",
+    YELLOW: "gold",
+}
+
+# Map from the color name / jewell name or number
+NAME_TO_COINS = {color: i for i, color in COINS_TO_NAMES.items()}
+NAME_TO_COINS.update({jewell: i for i, jewell in COINS_TO_JEWELL.items()})
+NAME_TO_COINS.update({str(i): i for i in COINS_TO_NAMES})
+
+
 STAGE = 6
 PRODUCTION = 7
 VICTORY_POINTS = 8

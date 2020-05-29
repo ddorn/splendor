@@ -25,11 +25,7 @@ class Action:
             )
 
         if cls is TakeAction:
-            # Colors can be named
-            rev = {color: i for i, color in COINS_TO_NAMES.items()}
-            # Or digits
-            rev.update({str(i): i for i in range(YELLOW + 1)})
-            args = [rev.get(a.lower()) for a in words[1:]]
+            args = [NAME_TO_COINS.get(a.lower()) for a in words[1:]]
             if None in args:
                 c = next(w for w, a in zip(words[1:], args) if a is None)
                 raise ActionParseError(f"'{c}' is not a valid color name.")

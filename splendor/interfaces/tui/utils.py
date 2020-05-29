@@ -9,16 +9,23 @@ _print = print
 
 COINS_LETTER = "RGBKWY"
 
+COINS_TO_COLOR = {
+    RED: "#FF0000",
+    GREEN: "#50C878",
+    BLUE: "#0000FF",
+    BLACK: "#C06060",
+    WHITE: "#FFFFFF",
+    YELLOW: "#FFFF00",
+}
+
+BG_COLOR = "#111111"
+
 
 def _color(x: int):
-    hexa = {
-        RED: 0xFF0000,
-        GREEN: 0x00FF00,
-        BLUE: 0x0000FF,
-        BLACK: 0xC06060,
-        WHITE: 0xFFFFFF,
-        YELLOW: 0xFFFF00,
-    }.get(x, x)
+    hexa = COINS_TO_COLOR.get(x, x)
+    if isinstance(hexa, str):
+        # it should be "#xxxxxx"
+        hexa = int(hexa.strip("#"), 16)
 
     r = hexa >> 16 & 0xFF
     g = hexa >> 8 & 0xFF
