@@ -6,6 +6,5 @@ let
 in pkgs.mkShell {
   buildInputs = [ pythonEnv ];
 
-  PYTHONPATH = ./.;
+  PYTHONPATH = ".";
 }
-	

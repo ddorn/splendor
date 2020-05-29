@@ -19,7 +19,7 @@ COINS_TO_COLOR = {
 }
 
 BG_COLOR = "#111111"
-
+NO_COIN_COLOR = "#505050"
 
 def _color(x: int):
     hexa = COINS_TO_COLOR.get(x, x)
@@ -57,7 +57,8 @@ def print(
     if bold:
         # my bold is ugly
         # text = f"\033[1m{text}"
-        fg = WHITE
+        # fg = WHITE
+        text = ansi(1) + text
 
     if fg is not None:
         text = ansi(38, 2, *_color(fg)) + text

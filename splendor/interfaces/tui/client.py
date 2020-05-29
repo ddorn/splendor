@@ -13,7 +13,7 @@ from splendor.data import *
 from splendor.game import *
 from splendor.game.errors import ActionParseError, SplendorException
 from splendor.interfaces.runner import BaseClient
-from .utils import COINS_LETTER, fmt, print, COINS_TO_COLOR, BG_COLOR
+from .utils import COINS_LETTER, fmt, print, COINS_TO_COLOR, BG_COLOR, NO_COIN_COLOR
 
 
 class ActionLexer(Lexer):
@@ -168,7 +168,7 @@ class TuiClient(BaseClient):
 
     @classmethod
     def card_str(cls, card: Card):
-        i = fmt(card.id, it=True)
+        i = fmt(f"{card.id:>2}", it=True)
         c = cls.coins_str(Coins(*card[:YELLOW]))
         p = fmt(COINS_LETTER[card.production], fg=card.production)
         points = fmt(card.points, fg=0xFFA500)
@@ -181,7 +181,7 @@ class TuiClient(BaseClient):
     @classmethod
     def coins_str(cls, coins):
         s = " ".join(
-            fmt(f"{v}{COINS_LETTER[i]}", fg=i if v else 0x202020)
+            fmt(f"{v}{COINS_LETTER[i]}", fg=i if v else NO_COIN_COLOR)
             for i, v in enumerate(coins)
         )
         return s
