@@ -62,6 +62,18 @@ def test_coins_issubset_empty():
     assert empty.issubset(empty)
 
 
+@mark.parametrize(
+    'card,coins,expected',
+    [
+        ((3, 1, 1,), Coins(2, 0, 3, 1, 1, 2), True),
+        ((0, 1, 1, 1,), Coins(yellow=3), True),
+        ((0, 1, 1, 1,), Coins(yellow=2), False),
+        ((0, 1, 1, 1,), Coins(1, yellow=2), False),
+    ]
+)
+def test_coins_can_buy(card, coins, expected):
+    assert coins.can_buy(card) == expected
+
 def test_coins_iter():
     c = Coins(1, 2, 3, 4, 5, 6)
     for i, v in enumerate(c):

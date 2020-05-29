@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from pytest import raises
 
 from splendor.data import *
@@ -16,33 +18,26 @@ def test_game_init():
     assert game.bank[YELLOW] == START_YELLOW
 
 
-def test_game_public_state_immutable():
+def test_game_public_state_no_refs():
     game = Game(2)
+    original_game = deepcopy(game)
+
     state = game.public_state
 
+    state.players[0].points += 1
+    state.players[1] = None
+    with raises(TypeError):
+        state.bank[0] += 1
     with raises(AttributeError):
-        state.players[0].points += 1
+        state.bank.white = 0
+    state.deck[1] = None
+    state.bank = None
+    state.deck[0][0] = None
 
     with raises(TypeError):
-        state.players[0] = None
+        state.deck[0][0][0] = None
 
-    with raises(AttributeError):
-        state.coins[0].red += 1
-
-    with raises(AttributeError):
-        state.coins.white = 0
-
-    with raises(TypeError):
-        state.cards[0] = None
-
-    with raises(AttributeError):
-        state.coins = None
-
-    with raises(TypeError):
-        state.cards[0][0] = None
-
-    with raises(TypeError):
-        state.cards[0][0][0] = None
+    assert original_game == game
 
 
 def test_game_public_state():
@@ -50,13 +45,13 @@ def test_game_public_state():
 
     ps = game.public_state
 
-    assert len(ps.cards) == 3
-    for age in ps.cards:
+    assert len(ps.deck) == 3
+    for age in ps.revealed_cards():
         assert len(age) == 4
 
     assert len(ps.nobles) == 3
     assert ps.bank == game.bank
-    assert ps.current_player == game.player_idx
+    assert ps.current_player_id == game.current_player_id
     assert len(ps.players) == len(game.players)
 
 

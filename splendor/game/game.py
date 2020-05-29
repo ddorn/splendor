@@ -1,5 +1,7 @@
+from dataclasses import dataclass
 from operator import attrgetter
 from random import shuffle
+from typing import List, Tuple
 
 from splendor.data import *
 from splendor.game import TakeAction, BuyAction, ReserveAction
@@ -18,46 +20,29 @@ def get(objs, **attrs):
             return obj
 
 
-PublicState = namedtuple(
-    "PublicState", ["current_player", "cards", "bank", "players", "nobles"]
-)
+@dataclass
+class BaseGame:
+    """Game class that implements the logic but with no checks."""
 
+    current_player_id: int
+    deck: List[List[Card]]
+    bank: Coins
+    players: List[Player]
+    nobles: List[Tuple[int, int, int, int, int, int]]
 
-class Game:
-    def __init__(self, nb_players=4):
-        assert nb_players in range(2, 5), nb_players
+    @property
+    def current_player(self):
+        return self.players[self.current_player_id]
 
-        self.player_idx = 0
-        self.players = [Player() for _ in range(nb_players)]
-
-        self.deck = [[c for c in CARDS if c.stage == stage] for stage in STAGES]
-        for stage in self.deck:
-            shuffle(stage)
-
-        nobles = list(NOBLES)
-        shuffle(nobles)
-        self.nobles = nobles[: nb_players + 1]
-
-        sc = START_COINS[nb_players]
-        self.bank = Coins(sc, sc, sc, sc, sc, 5)
+    def copy(self):
+        return BaseGame(self.current_player_id, [stage[:] for stage in self.deck], self.bank, [p.copy() for p in self.players],
+                        self.nobles[:])
 
     def ended(self):
         """Whether the game is over."""
-        return self.player_idx == 0 and any(
+        return self.current_player_id == 0 and any(
             p.points >= POINTS_FOR_WIN for p in self.players
         )
-
-    def play(self, action):
-        """Perform an action for the current player."""
-
-        if self.ended():
-            raise GameEnded()
-
-        player = self.players[self.player_idx]
-        self.action(player, action)
-
-        self.player_idx += 1
-        self.player_idx %= len(self.players)
 
     def action(self, player, action):
         """
@@ -74,50 +59,32 @@ class Game:
         }[action.__class__](player, action)
 
     def _take_action(self, player, take: TakeAction):
-        if len(take) > 3:
-            raise TakeCoinsException("Cannot take more than 3 coins.", take)
-        if len(take) != len(set(take)) and len(take) != 2:
-            raise TakeCoinsException("Can only take two coins alone.", take)
-        if YELLOW in take:
-            raise TakeCoinsException("Cannot take yellow coin.", take)
-        if not COINS.issuperset(take):
-            raise TakeCoinsException("Not all coins are valid numbers.", take)
-
+        """Perform a TakeAction with no checks."""
         wanted = take.as_coins()
-
-        total = wanted.total() + player.coins.total()
-        if total > MAX_COINS_PER_PLAYER:
-            raise TooManyCoins(wanted.total(), total)
-
-        if not wanted.issubset(self.bank):
-            raise NotEnoughCoins(self.bank, wanted)
-
-        two_same = len(take) == 2 and take[0] == take[1]
-
-        if two_same:
-            color = take[0]
-            if self.bank[color] < MIN_COINS_FOR_TAKE_TWO_SAME:
-                raise NotEnoughCoins(self.bank, wanted)
-
         self.bank -= wanted
         player.coins += wanted
 
-    def _buy_action(self, player: Player, buy: BuyAction):
-        # Get the card
+    def _buy_card(self, player, buy: BuyAction):
+        """Return the card refered by the action and whether it is a reserved card.
+
+        Return (None, False) if the card isn't found
+        """
+
         reserved = get(player.reserved, id=buy.card_id)
 
         if reserved:
-            card = reserved
+            return reserved, True
         else:
             card = self.get_visible_card(buy.card_id)
+            if card:
+                return card, False
+        return None, False
 
-        if not card:
-            raise NoSuchCard(buy.card_id)
+    def _buy_action(self, player: Player, buy: BuyAction):
+        # Get the card
+        card, reserved = self._buy_card(player, buy)
 
-        # check if we can buy it
         cost = Coins(*card[:YELLOW], 0)
-        if not cost.issubset(player.coins + player.production, yellow_as_joker=True):
-            raise NotEnoughCoins(player.coins + player.production, cost)
 
         # pay
         coin_cost = (cost - player.production).clamp()
@@ -143,23 +110,13 @@ class Game:
 
     def _reserve_action(self, player: Player, reserve: ReserveAction):
 
-        if len(player.reserved) >= MAX_RESERVED:
-            raise ReserveFull()
-
         # Get the card
         card: Card
         if reserve.card_id in STAGES:
             stage = STAGES.index(reserve.card_id)
-
-            if len(self.deck[stage]) <= VISIBLE_CARDS:
-                raise EmptyDeck(reserve.card_id)
-
             card = self.deck[stage][VISIBLE_CARDS]
         else:
             card = self.get_visible_card(reserve.card_id)
-            if not card:
-                raise NoSuchCard(reserve.card_id)
-
             stage = STAGES.index(card.stage)
 
         self.deck[stage].remove(card)
@@ -183,15 +140,109 @@ class Game:
             if Coins(*noble).issubset(player.production):
                 return noble
 
-    @property
-    def public_state(self) -> PublicState:
-        return PublicState(
-            self.player_idx,
-            tuple(tuple(self.deck[age][:VISIBLE_CARDS]) for age in range(3)),
-            self.bank,
-            tuple(p.as_tuple() for p in self.players),
-            tuple(self.nobles),
-        )
-
     def revealed_cards(self):
         return [self.deck[age][:VISIBLE_CARDS] for age in range(3)]
+
+
+class Game(BaseGame):
+    def __init__(self, nb_players=4):
+        assert nb_players in range(2, 5), nb_players
+
+        players = [Player() for _ in range(nb_players)]
+
+        deck = [[c for c in CARDS if c.stage == stage] for stage in STAGES]
+        for stage in deck:
+            shuffle(stage)
+
+        nobles = list(NOBLES)
+        shuffle(nobles)
+        nobles = nobles[: nb_players + 1]
+
+        sc = START_COINS[nb_players]
+        bank = Coins(sc, sc, sc, sc, sc, 5)
+
+        super().__init__(0, deck, bank, players, nobles)
+
+    def play(self, action):
+        """Perform an action for the current player."""
+
+        if self.ended():
+            raise GameEnded()
+
+        player = self.players[self.current_player_id]
+        self.action(player, action)
+
+        self.current_player_id += 1
+        self.current_player_id %= len(self.players)
+
+    def _take_action(self, player, take: TakeAction):
+        if len(take) > 3:
+            raise TakeCoinsException("Cannot take more than 3 coins.", take)
+        if len(take) != len(set(take)) and len(take) != 2:
+            raise TakeCoinsException("Can only take two coins alone.", take)
+        if YELLOW in take:
+            raise TakeCoinsException("Cannot take yellow coin.", take)
+        if not COINS.issuperset(take):
+            raise TakeCoinsException("Not all coins are valid numbers.", take)
+
+        wanted = take.as_coins()
+
+        total = wanted.total() + player.coins.total()
+        if total > MAX_COINS_PER_PLAYER:
+            raise TooManyCoins(wanted.total(), total)
+
+        if not wanted.issubset(self.bank):
+            raise NotEnoughCoins(self.bank, wanted)
+
+        two_same = len(take) == 2 and take[0] == take[1]
+        if two_same:
+            if self.bank[take[0]] < MIN_COINS_FOR_TAKE_TWO_SAME:
+                raise NotEnoughCoins(self.bank, wanted)
+
+        super()._take_action(player, take)
+
+    def _buy_action(self, player: Player, buy: BuyAction):
+        card, _ = self._buy_card(player, buy)
+
+        if not card:
+            raise NoSuchCard(buy.card_id)
+
+        # check if we can buy it
+        cost = Coins(*card[:YELLOW], 0)
+        if not cost.issubset(player.coins + player.production, yellow_as_joker=True):
+            raise NotEnoughCoins(player.coins + player.production, cost)
+
+        super(Game, self)._buy_action(player, buy)
+
+    def _reserve_action(self, player: Player, reserve: ReserveAction):
+
+        if len(player.reserved) >= MAX_RESERVED:
+            raise ReserveFull()
+
+        # Get the card
+        card: Card
+        if reserve.card_id in STAGES:
+            stage = STAGES.index(reserve.card_id)
+            if len(self.deck[stage]) <= VISIBLE_CARDS:
+                raise EmptyDeck(reserve.card_id)
+        else:
+            card = self.get_visible_card(reserve.card_id)
+            if not card:
+                raise NoSuchCard(reserve.card_id)
+
+        super(Game, self)._reserve_action(player, reserve)
+
+    @property
+    def public_state(self) -> BaseGame:
+        return BaseGame(
+            self.current_player_id,
+            [
+                [
+                    c if i < VISIBLE_CARDS else UNKNOWN_CARD
+                    for i, c in enumerate(stage)
+                ] for stage in self.deck
+            ],
+            self.bank,
+            [p.copy() for p in self.players],
+            self.nobles[:],
+        )

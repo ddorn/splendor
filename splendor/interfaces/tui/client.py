@@ -90,7 +90,7 @@ class TuiClient(BaseClient):
         self.name = name
         self.last_was_error = False
 
-    def play(self, public_state: PublicState):
+    def play(self, public_state: BaseGame):
 
         if not self.last_was_error:
             self.show(public_state)
@@ -101,7 +101,7 @@ class TuiClient(BaseClient):
 
         def bottom_bar():
             sep = ("", " ")
-            p = public_state.players[public_state.current_player]
+            p = public_state.players[public_state.current_player_id]
             return [
                 sep,
                 ("#ffa500 bg:black", " Splendor "),
@@ -123,7 +123,7 @@ class TuiClient(BaseClient):
         )
 
         text = prompt(
-            f"Player {public_state.current_player}: ",
+            f"Player {public_state.current_player_id}: ",
             completer=completer,
             validator=ActionValidator(),
             color_depth=ColorDepth.TRUE_COLOR,
@@ -137,7 +137,7 @@ class TuiClient(BaseClient):
         self.last_was_error = False
         return action
 
-    def show(self, game: PublicState):
+    def show(self, game: BaseGame):
         print("\033[2J", end="")  # clear screen
         print(f" Player: {self.name} ".center(32, "="))
         print()
@@ -147,7 +147,7 @@ class TuiClient(BaseClient):
             print(self.noble_str(noble), indent=2)
         print()
 
-        for i, age in enumerate(game.cards):
+        for i, age in enumerate(game.revealed_cards()):
             print("Age", fmt(STAGES[i], bold=True), ul=True)
 
             for card in age:

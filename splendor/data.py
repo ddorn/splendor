@@ -150,6 +150,8 @@ CARDS = (
     Card(3, 5, 3, 0, 3, "III", BLACK, 3, 89),
 )
 
+UNKNOWN_CARD = Card(-1, -1, -1, -1, -1, "X", -1, -1, -1)
+
 STAGES = ("I", "II", "III")
 
 

@@ -1,6 +1,6 @@
 from itertools import cycle
 
-from splendor.game import Game, PublicState, TakeAction
+from splendor.game import Game, BaseGame, TakeAction
 from splendor.game.errors import SplendorException
 
 
@@ -20,7 +20,7 @@ class BaseViewClient:
 class BaseClient:
     """Base class for all AIs, Player inputs etc...."""
 
-    def play(self, state: PublicState):
+    def play(self, state: BaseGame):
         return TakeAction()
 
     def error(self, error: SplendorException):
@@ -58,5 +58,6 @@ class Runner:
 
 if __name__ == "__main__":
     from splendor.interfaces.tui import TuiClient
+    from splendor.interfaces.ai import MinMaxAi
 
-    Runner(TuiClient("Félix"), TuiClient("Diego")).run()
+    Runner(MinMaxAi(), TuiClient("Diego")).run()

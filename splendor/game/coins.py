@@ -1,7 +1,7 @@
 from collections import Counter
 from dataclasses import dataclass
 
-from splendor.data import COINS_TO_NAMES, YELLOW
+from splendor.data import COINS_TO_NAMES, YELLOW, Card
 
 
 @dataclass(frozen=True)
@@ -63,7 +63,12 @@ class Coins:
             return missing <= other.yellow
         return all(a <= b for a, b in zip(self, other))
 
+    def can_buy(self, card: Card):
+        """Whether a card could be bough with those coins."""
+        return Coins(*card[:YELLOW]).issubset(self, yellow_as_joker=True)
+
     def total(self):
+        """Total number of coins."""
         return sum(self)
 
     def clamp(self):

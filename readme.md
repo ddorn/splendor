@@ -27,9 +27,9 @@ from splendor import *
 from splendor.data import *
 
 class RandomAi(BaseClient):
-    def play(self, state: PublicState):
+    def play(self, state: BaseGame):
         r = random.random()
-        visible_cards_ids = [c.id for stage in state.cards for c in stage]
+        visible_cards_ids = [c.id for stage in state.deck for c in stage]
         if r < 0.8:
             return TakeAction(random.choice([RED, GREEN, BLUE, BLACK, WHITE]))
         elif r < 0.9:
