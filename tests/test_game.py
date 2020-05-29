@@ -2,6 +2,7 @@ from pytest import raises
 
 from splendor.data import *
 from splendor.game import *
+from splendor.game.coins import one_coins, yellow_coin
 from splendor.game.errors import *
 
 
@@ -187,6 +188,24 @@ def test_game_buy_action():
     assert p.points == card.points
     assert card not in p.reserved
     assert p.production != Coins()
+
+
+def test_buy_with_yellow():
+    game = Game(2)
+    p = game.players[0]
+    card = game.deck[0][0]
+    p.coins = Coins(*card[:YELLOW])
+
+    # Remove one coin
+    for c in p.coins.as_iter():
+        p.coins -= one_coins[c]
+        break
+
+    p.coins += yellow_coin
+
+    game.play(BuyAction(card.id))
+
+    assert p.production.total() > 0
 
 
 def test_game_buy_visible():

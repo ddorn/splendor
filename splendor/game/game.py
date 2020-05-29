@@ -116,7 +116,7 @@ class Game:
 
         # check if we can buy it
         cost = Coins(*card[:YELLOW], 0)
-        if not cost.issubset(player.coins + player.production):
+        if not cost.issubset(player.coins + player.production, yellow_as_joker=True):
             raise NotEnoughCoins(player.coins + player.production, cost)
 
         # pay

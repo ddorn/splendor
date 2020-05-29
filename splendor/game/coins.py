@@ -21,6 +21,7 @@ class Coins:
         )
 
     def as_iter(self):
+        """Yield coins one by one."""
         for i, v in enumerate(self):
             for _ in range(v):
                 yield i
