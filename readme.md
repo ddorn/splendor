@@ -1,4 +1,4 @@
-# Splendor
+from splendor.interfaces.base import BaseClient# Splendor
 
 This is a python version of the popular game [Splendor](https://www.spacecowboys.fr/splendor/)
 

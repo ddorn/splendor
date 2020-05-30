@@ -75,6 +75,9 @@ class Coins:
         """A Coins with all the value below 0 clamped to 0."""
         return Coins(*(v if v >= 0 else 0 for v in self))
 
+    def min(self, *others):
+        return Coins(*(min(color) for color in zip(self, *others)))
+
 
 red_coin = Coins(red=1)
 green_coin = Coins(green=1)

@@ -1,4 +1,4 @@
-from splendor.interfaces.runner import BaseViewClient
+from splendor.interfaces.base import BaseViewClient
 
 
 class TuiView(BaseViewClient):

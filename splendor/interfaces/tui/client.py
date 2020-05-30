@@ -12,7 +12,7 @@ from prompt_toolkit.validation import ValidationError, Validator
 from splendor.data import *
 from splendor.game import *
 from splendor.game.errors import ActionParseError, SplendorException
-from splendor.interfaces.runner import BaseClient
+from ..base import BaseClient
 from .utils import COINS_LETTER, fmt, print, COINS_TO_COLOR, BG_COLOR, NO_COIN_COLOR
 
 
@@ -138,7 +138,7 @@ class TuiClient(BaseClient):
         return action
 
     def show(self, game: BaseGame):
-        print("\033[2J", end="")  # clear screen
+        # print("\033[2J", end="")  # clear screen
         print(f" Player: {self.name} ".center(32, "="))
         print()
 

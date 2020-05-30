@@ -1,30 +1,12 @@
 from itertools import cycle
 
-from splendor.game import Game, BaseGame, TakeAction
+from splendor.game import Game
 from splendor.game.errors import SplendorException
+from splendor.interfaces.base import BaseViewClient, BaseClient
+from splendor.interfaces.tui.utils import fmt
 
 
-__all__ = ["BaseViewClient", "BaseClient", "Runner"]
-
-
-class BaseViewClient:
-    """Base class for splendor renderers."""
-
-    def show(self, game: Game):
-        """Called at the start of every turn to show the board."""
-
-    def show_error(self, error: SplendorException):
-        """Called when an exception occurs."""
-
-
-class BaseClient:
-    """Base class for all AIs, Player inputs etc...."""
-
-    def play(self, state: BaseGame):
-        return TakeAction()
-
-    def error(self, error: SplendorException):
-        pass
+__all__ = ["Runner"]
 
 
 class Runner:
@@ -34,7 +16,10 @@ class Runner:
         self.game = Game(len(self.clients))
 
     def run(self):
+        turn = -1
         for i, client in cycle(enumerate(self.clients)):
+            turn += 1
+            print("Turn", fmt(turn, bold=True))
             self.view_client.show(self.game)
 
             while True:
@@ -60,4 +45,4 @@ if __name__ == "__main__":
     from splendor.interfaces.tui import TuiClient
     from splendor.interfaces.ai import MinMaxAi
 
-    Runner(MinMaxAi(), TuiClient("Diego")).run()
+    Runner(MinMaxAi(), TuiClient("Diego"), ).run()

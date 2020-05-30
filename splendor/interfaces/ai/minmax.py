@@ -1,9 +1,14 @@
 import sys
+from time import time
+from operator import itemgetter
 
 from splendor.data import *
 from splendor.game import *
 from splendor.game.errors import SplendorException
-from splendor.interfaces.runner import BaseClient
+from splendor.game.game import get
+from splendor.interfaces.base import BaseClient
+from splendor.interfaces.tui.utils import fmt, print
+from tqdm import tqdm
 
 
 class MinMaxAi(BaseClient):
@@ -32,23 +37,24 @@ class MinMaxAi(BaseClient):
         total: Coins = player.coins + player.production
         for stage in state.revealed_cards():
             for card in stage:
-                if total.can_buy(card):
+                if card is not UNKNOWN_CARD and total.can_buy(card):
                     yield BuyAction(card.id)
 
         # Buy a reserved card.
         for card in player.reserved:
-            if total.can_buy(card):
+            if card is not UNKNOWN_CARD and total.can_buy(card):
                 yield BuyAction(card.id)
 
         if len(player.reserved) < MAX_RESERVED:
             # Reserve a hidden card.
-            # for stage in STAGES:
-            #     yield ReserveAction(stage)
+            for stage in STAGES:
+                yield ReserveAction(stage)
 
             # Reserve a visible card.
             for stage in state.revealed_cards():
                 for card in stage:
-                    yield ReserveAction(card.id)
+                    if card is not UNKNOWN_CARD:
+                        yield ReserveAction(card.id)
 
     def generate_diff_coins(self, bank, nb=3, start=0):
         """
@@ -86,21 +92,60 @@ class MinMaxAi(BaseClient):
         Higher value means better for the current player.
         """
 
+        score = 0
         player = state.players[state.current_player_id]
 
-        return 3 * player.production.total() + player.coins.total() + 5 * player.points
+        if player.points >= POINTS_FOR_WIN:
+            score += 100 * (player.points - POINTS_FOR_WIN + 2)
+
+        # One  point per card that counts for a noble.
+        score += sum(player.production.min(n).total() for n in state.nobles)
+
+        # One half point per coin that counts for a card
+        # score += 0.5 * sum(player.coins.min(c[:YELLOW]).total() for age in state.deck for c in age[:4])
+
+        score += 12 * player.production.total()
+        score += player.coins.total() + player.coins.yellow * 2
+        score += 12 * player.points
+        return score
 
     def play(self, state: BaseGame):
-        best_score = -1
-        best_action = TakeAction()
-        for action in self.legal_moves(state):
-            new_state = self.apply(action, state)
-            score = self.score(new_state)
 
-            if score > best_score:
-                best_score = score
-                best_action = action
-        return best_action
+        start = time()
+        count = [0]
+        MAX_DEPTH = 4
+        def explore(state, depth=0):
+            if depth == MAX_DEPTH:
+                count[0] += 1
+                yield (self.score(state), )
+                return
+
+            moves = []
+            for m in self.legal_moves(state):
+                new = self.apply(m, state)
+                score = self.score(new)
+                moves.append((m, new, score))
+
+            moves.sort(key=itemgetter(2), reverse=True)
+            to_delete = len(moves) // (depth + 2.5)
+            del moves[int(to_delete):]
+
+            it = tqdm(moves) if depth is 0 else moves
+            for m, state, score in it:
+                for *mvs, r in explore(state, depth+1):
+                    yield (m, *mvs, score + r * 0.7)
+
+        actions = sorted(explore(state), key=itemgetter(-1), reverse=True)
+        action = actions[0]
+
+        # print(*actions[:10], sep="\n")
+
+        print()
+        print("explored:", count[0], "duration:", round(time() - start, 2))
+        print(action, bold=True)
+
+        return action[0]
+
 
     def error(self, error: SplendorException):
         print(error, file=sys.stderr)
