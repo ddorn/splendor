@@ -56,6 +56,10 @@ Card = namedtuple(
     ("red", "green", "blue", "black", "white", "stage", "production", "points", "id"),
 )
 
+
+UNKNOWN = -1
+UNKNOWN_CARD = Card(-1, -1, -1, -1, -1, "X", -1, -1, -1)
+CARDS_NB = 90
 CARDS = (
     # ("Red", "Green", "Blue", "Black", "White", "Stage", "Production", "VP", "ID"),
     Card(0, 0, 3, 0, 0, "I", WHITE, 0, 0),
@@ -148,9 +152,9 @@ CARDS = (
     Card(7, 0, 0, 3, 0, "III", BLACK, 5, 87),
     Card(6, 3, 0, 3, 0, "III", BLACK, 4, 88),
     Card(3, 5, 3, 0, 3, "III", BLACK, 3, 89),
+    UNKNOWN_CARD
 )
 
-UNKNOWN_CARD = Card(-1, -1, -1, -1, -1, "X", -1, -1, -1)
 
 STAGES = ("I", "II", "III")
 

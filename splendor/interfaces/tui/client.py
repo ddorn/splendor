@@ -151,7 +151,7 @@ class TuiClient(BaseClient):
             print("Age", fmt(STAGES[i], bold=True), ul=True)
 
             for card in age:
-                print(self.card_str(card), indent=2)
+                print(self.card_str(CARDS[card]), indent=2)
             print()
 
         for i, player in enumerate(game.players):

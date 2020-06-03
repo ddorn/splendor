@@ -63,7 +63,7 @@ class TakeAction(tuple, Action):
 
 class BuyAction(Action):
     def __init__(self, card_id):
-        assert card_id in range(len(CARDS)), f"Invalid card id"
+        assert card_id in range(CARDS_NB), f"Invalid card id"
         self.card_id = card_id
 
     def __eq__(self, other):
@@ -75,9 +75,7 @@ class BuyAction(Action):
 
 class ReserveAction(Action):
     def __init__(self, card_id):
-        assert card_id in ("I", "II", "III") or card_id in range(
-            len(CARDS)
-        ), f"Invalid card id"
+        assert card_id in ("I", "II", "III") or card_id in range(CARDS_NB), f"Invalid card id"
         self.card_id = card_id
 
     def __eq__(self, other):

@@ -32,10 +32,7 @@ def test_game_public_state_no_refs():
         state.bank.white = 0
     state.deck[1] = None
     state.bank = None
-    state.deck[0][0] = None
-
-    with raises(TypeError):
-        state.deck[0][0][0] = None
+    state.deck["I"][0] = None
 
     assert original_game == game
 
@@ -94,14 +91,16 @@ def test_game_reserve_action_hidden():
     game = Game(2)
     p = game.players[1]
 
-    for i in range(3):
-        card = game.deck[i][VISIBLE_CARDS]
-        game.action(p, ReserveAction(STAGES[i]))
+    for i, stage in enumerate(STAGES):
+        deck_len = len(game.deck[stage])
+        card = game.deck[stage][VISIBLE_CARDS]
+        game.action(p, ReserveAction(stage))
 
         assert p.coins == Coins(yellow=i + 1)
         assert game.bank.yellow == 5 - (i + 1)
         assert card in p.reserved
         assert len(p.reserved) == i + 1
+        assert len(game.deck[stage]) == deck_len - 1
 
     with raises(ReserveFull):
         game.action(p, ReserveAction("I"))
@@ -138,14 +137,14 @@ def test_game_reserve_visible():
     game = Game(2)
     p = game.players[0]
 
-    to_reserve = game.deck[0][2]
-    game.action(p, ReserveAction(to_reserve.id))
+    to_reserve = game.deck["I"][2]
+    game.action(p, ReserveAction(to_reserve))
 
-    assert to_reserve not in game.deck[0]
+    assert to_reserve not in game.deck["I"]
     assert to_reserve in p.reserved
 
     with raises(NoSuchCard):
-        game.action(p, ReserveAction(to_reserve.id))
+        game.action(p, ReserveAction(to_reserve))
 
     assert p.coins == Coins(yellow=1)
     assert game.bank.yellow == 4
@@ -167,20 +166,19 @@ def test_game_buy_action():
     p = game.players[0]
 
     with raises(NoSuchCard):
-        game.action(p, ReserveAction(game.deck[2][VISIBLE_CARDS].id))
+        game.action(p, ReserveAction(game.deck["II"][VISIBLE_CARDS]))
 
     game.action(p, ReserveAction("I"))
     card: Card = p.reserved[0]
-    print(p)
 
-    p.coins = Coins(*card[:YELLOW]) - Coins(1, 1, 1, 1, 1)
+    p.coins = CARDS_COST[card] - Coins(1, 1, 1, 1, 1)
     with raises(NotEnoughCoins):
-        game.action(p, BuyAction(card.id))
+        game.action(p, BuyAction(card))
 
     p.coins += Coins(1, 1, 1, 1, 1)
-    game.action(p, BuyAction(card.id))
+    game.action(p, BuyAction(card))
 
-    assert p.points == card.points
+    assert p.points == CARDS[card].points
     assert card not in p.reserved
     assert p.production != Coins()
 
@@ -188,8 +186,8 @@ def test_game_buy_action():
 def test_buy_with_yellow():
     game = Game(2)
     p = game.players[0]
-    card = game.deck[0][0]
-    p.coins = Coins(*card[:YELLOW])
+    card = game.deck["I"][0]
+    p.coins = CARDS_COST[card]
 
     # Remove one coin
     for c in p.coins.as_iter():
@@ -198,26 +196,27 @@ def test_buy_with_yellow():
 
     p.coins += yellow_coin
 
-    game.play(BuyAction(card.id))
+    game.play(BuyAction(card))
 
     assert p.production.total() > 0
+    assert p.production == one_coins[CARDS[card].production]
 
 
 def test_game_buy_visible():
     game = Game(2)
     p = game.players[0]
-    card = game.deck[0][0]
+    card = game.deck["I"][0]
 
-    p.coins = Coins(*card[:YELLOW])
-    game.action(p, BuyAction(card.id))
+    p.coins = CARDS_COST[card]
+    game.action(p, BuyAction(card))
 
-    assert p.points == card.points
+    assert p.points == CARDS[card].points
     assert p.production != Coins()
 
 
 def test_game_end_exception():
     g = Game(2)
-    g.players[0].points += 100
+    g.players[0].points += POINTS_FOR_WIN
 
     assert g.ended()
     with raises(GameEnded):

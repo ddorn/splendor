@@ -1,8 +1,9 @@
 from collections import Counter
 from dataclasses import dataclass
 
-from splendor.data import COINS_TO_NAMES, YELLOW, Card
+from splendor.data import COINS_TO_NAMES, YELLOW, Card, CARDS
 
+__all__ = ["Coins", "CARDS_COST"]
 
 @dataclass(frozen=True)
 class Coins:
@@ -87,3 +88,4 @@ white_coin = Coins(white=1)
 yellow_coin = Coins(yellow=1)
 
 one_coins = (red_coin, green_coin, blue_coin, black_coin, white_coin, yellow_coin)
+CARDS_COST = tuple(Coins(*c[:YELLOW]) for c in CARDS)

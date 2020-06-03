@@ -1,6 +1,7 @@
 from pytest import raises, mark
 
-from splendor.game.coins import Coins
+from splendor.data import CARDS, YELLOW
+from splendor.game.coins import Coins, CARDS_COST
 
 
 def test_coins_immutable():
@@ -120,3 +121,10 @@ def test_coins_sum(a, b, c):
 )
 def test_coins_sub(a, b, c):
     assert a - b == c
+
+
+def test_cards_cost():
+    for card, cost in zip(CARDS, CARDS_COST):
+        assert Coins(*card[:YELLOW]) == cost
+        for v in range(YELLOW):
+            assert card[v] == cost[v]

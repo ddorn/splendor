@@ -1,4 +1,4 @@
-from splendor.interfaces.base import BaseClient# Splendor
+from splendor.interfaces.base import BaseClientfrom splendor.interfaces.base import BaseClient# Splendor
 
 This is a python version of the popular game [Splendor](https://www.spacecowboys.fr/splendor/)
 
@@ -29,7 +29,7 @@ from splendor.data import *
 class RandomAi(BaseClient):
     def play(self, state: BaseGame):
         r = random.random()
-        visible_cards_ids = [c.id for stage in state.deck for c in stage]
+        visible_cards_ids = [card for stage in state.deck for card in stage]
         if r < 0.8:
             return TakeAction(random.choice([RED, GREEN, BLUE, BLACK, WHITE]))
         elif r < 0.9:

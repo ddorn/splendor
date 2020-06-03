@@ -11,7 +11,15 @@ def test_noble_qte():
 
 
 def test_cards_qte():
-    assert len(CARDS) == 90
+    assert len(CARDS) == 91
+    assert CARDS_NB == 90
+    assert CARDS[-1] is UNKNOWN_CARD
+
+    for c in CARDS:
+        assert CARDS[c.id] is c
+
+    assert UNKNOWN_CARD.id == -1
+    assert UNKNOWN == UNKNOWN_CARD.id
 
 
 def test_constants():
@@ -27,3 +35,4 @@ def test_constants():
     assert VICTORY_POINTS == 8
 
     assert POINTS_FOR_WIN == 15
+    assert STAGES == ("I", "II", "III")

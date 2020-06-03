@@ -37,13 +37,13 @@ class MinMaxAi(BaseClient):
         total: Coins = player.coins + player.production
         for stage in state.revealed_cards():
             for card in stage:
-                if card is not UNKNOWN_CARD and total.can_buy(card):
-                    yield BuyAction(card.id)
+                if card is not UNKNOWN and total.can_buy(CARDS[card]):
+                    yield BuyAction(card)
 
         # Buy a reserved card.
         for card in player.reserved:
-            if card is not UNKNOWN_CARD and total.can_buy(card):
-                yield BuyAction(card.id)
+            if card != UNKNOWN and total.can_buy((CARDS[card])):
+                yield BuyAction(card)
 
         if len(player.reserved) < MAX_RESERVED:
             # Reserve a hidden card.
@@ -53,8 +53,8 @@ class MinMaxAi(BaseClient):
             # Reserve a visible card.
             for stage in state.revealed_cards():
                 for card in stage:
-                    if card is not UNKNOWN_CARD:
-                        yield ReserveAction(card.id)
+                    if card is not UNKNOWN:
+                        yield ReserveAction(card)
 
     def generate_diff_coins(self, bank, nb=3, start=0):
         """

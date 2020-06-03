@@ -45,4 +45,4 @@ if __name__ == "__main__":
     from splendor.interfaces.tui import TuiClient
     from splendor.interfaces.ai import MinMaxAi
 
-    Runner(MinMaxAi(), TuiClient("Diego"), ).run()
+    Runner(TuiClient("Felix"), MinMaxAi(), ).run()

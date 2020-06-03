@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from operator import attrgetter
 from random import shuffle
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 from splendor.data import *
 from splendor.game import TakeAction, BuyAction, ReserveAction
@@ -19,13 +19,12 @@ def get(objs, **attrs):
         if getter(obj) == value:
             return obj
 
-
 @dataclass
 class BaseGame:
     """Game class that implements the logic but with no checks."""
 
     current_player_id: int
-    deck: List[List[Card]]
+    deck: Dict[str, List[int]]
     bank: Coins
     players: List[Player]
     nobles: List[Tuple[int, int, int, int, int, int]]
@@ -35,7 +34,7 @@ class BaseGame:
         return self.players[self.current_player_id]
 
     def copy(self):
-        return BaseGame(self.current_player_id, [stage[:] for stage in self.deck], self.bank, [p.copy() for p in self.players],
+        return BaseGame(self.current_player_id, {stage: cards[:] for stage, cards in self.deck.items()}, self.bank, [p.copy() for p in self.players],
                         self.nobles[:])
 
     def ended(self):
@@ -64,25 +63,21 @@ class BaseGame:
         self.bank -= wanted
         player.coins += wanted
 
-    def _buy_card(self, player, buy: BuyAction):
+    def _get_buy_card(self, player, buy: BuyAction) -> Tuple[Card, bool]:
         """Return the card refered by the action and whether it is a reserved card.
 
         Return (None, False) if the card isn't found
         """
 
-        reserved = get(player.reserved, id=buy.card_id)
-
-        if reserved:
-            return reserved, True
-        else:
-            card = self.get_visible_card(buy.card_id)
-            if card:
-                return card, False
+        if buy.card_id in player.reserved:
+            return CARDS[buy.card_id], True
+        elif self.is_visible(buy.card_id):
+            return CARDS[buy.card_id], False
         return None, False
 
     def _buy_action(self, player: Player, buy: BuyAction):
         # Get the card
-        card, reserved = self._buy_card(player, buy)
+        card, reserved = self._get_buy_card(player, buy)
 
         cost = Coins(*card[:YELLOW], 0)
 
@@ -98,9 +93,9 @@ class BaseGame:
         player.production += one_coins[card.production]
 
         if reserved:
-            player.reserved.remove(card)
+            player.reserved.remove(card.id)
         else:
-            self.deck[STAGES.index(card.stage)].remove(card)
+            self.deck[card.stage].remove(card.id)
 
         # check nobles
         noble = self.check_nobles(player)
@@ -111,13 +106,13 @@ class BaseGame:
     def _reserve_action(self, player: Player, reserve: ReserveAction):
 
         # Get the card
-        card: Card
+        card: int
         if reserve.card_id in STAGES:
-            stage = STAGES.index(reserve.card_id)
+            stage = reserve.card_id
             card = self.deck[stage][VISIBLE_CARDS]
         else:
-            card = self.get_visible_card(reserve.card_id)
-            stage = STAGES.index(card.stage)
+            card = reserve.card_id
+            stage = CARDS[card].stage
 
         self.deck[stage].remove(card)
         player.reserved.append(card)
@@ -126,14 +121,10 @@ class BaseGame:
             player.coins += Coins(yellow=1)
             self.bank -= Coins(yellow=1)
 
-    def get_visible_card(self, card_id):
-        candidates = [
-            c for stage in self.deck for c in stage[:VISIBLE_CARDS] if c.id == card_id
-        ]
+    def is_visible(self, card_id: int) -> bool:
+        """Wheter a given gard is visible."""
+        return any(card_id in stage[:VISIBLE_CARDS] for stage in self.deck.values())
 
-        assert len(candidates) <= 1, "There are two cards with the same id ???"
-
-        return candidates[0] if candidates else None
 
     def check_nobles(self, player):
         for noble in self.nobles:
@@ -141,7 +132,8 @@ class BaseGame:
                 return noble
 
     def revealed_cards(self):
-        return [self.deck[age][:VISIBLE_CARDS] for age in range(3)]
+        """Return a list of list of cards per stage."""
+        return [self.deck[stage][:VISIBLE_CARDS] for stage in STAGES]
 
 
 class Game(BaseGame):
@@ -150,8 +142,11 @@ class Game(BaseGame):
 
         players = [Player() for _ in range(nb_players)]
 
-        deck = [[c for c in CARDS if c.stage == stage] for stage in STAGES]
-        for stage in deck:
+        deck = {
+            stage: [c.id for c in CARDS if c.stage == stage] for stage in STAGES
+        }
+
+        for stage in deck.values():
             shuffle(stage)
 
         nobles = list(NOBLES)
@@ -202,7 +197,7 @@ class Game(BaseGame):
         super()._take_action(player, take)
 
     def _buy_action(self, player: Player, buy: BuyAction):
-        card, _ = self._buy_card(player, buy)
+        card, _ = self._get_buy_card(player, buy)
 
         if not card:
             raise NoSuchCard(buy.card_id)
@@ -222,12 +217,9 @@ class Game(BaseGame):
         # Get the card
         card: Card
         if reserve.card_id in STAGES:
-            stage = STAGES.index(reserve.card_id)
-            if len(self.deck[stage]) <= VISIBLE_CARDS:
+            if len(self.deck[reserve.card_id]) <= VISIBLE_CARDS:
                 raise EmptyDeck(reserve.card_id)
-        else:
-            card = self.get_visible_card(reserve.card_id)
-            if not card:
+        elif not self.is_visible(reserve.card_id):
                 raise NoSuchCard(reserve.card_id)
 
         super(Game, self)._reserve_action(player, reserve)
@@ -236,12 +228,10 @@ class Game(BaseGame):
     def public_state(self) -> BaseGame:
         return BaseGame(
             self.current_player_id,
-            [
-                [
-                    c if i < VISIBLE_CARDS else UNKNOWN_CARD
-                    for i, c in enumerate(stage)
-                ] for stage in self.deck
-            ],
+            {
+                stage: cards[:VISIBLE_CARDS] + [-1] * len(cards[VISIBLE_CARDS:])
+                for stage, cards in self.deck.items()
+            },
             self.bank,
             [p.copy() for p in self.players],
             self.nobles[:],
